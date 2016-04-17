@@ -19,7 +19,8 @@ import numpy as np
 import random
 import sys
 
-path = get_file('nietzsche.txt', origin="https://s3.amazonaws.com/text-datasets/nietzsche.txt")
+#path = get_file('nietzsche.txt', origin="https://s3.amazonaws.com/text-datasets/nietzsche.txt")
+path = sys.argv[1]
 
 try: 
     text = open(path).read().lower()
@@ -35,9 +36,6 @@ char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
 
-exit()
-
-
 # cut the text in semi-redundant sequences of maxlen characters
 maxlen = 20
 step = 3
@@ -47,6 +45,7 @@ for i in range(0, len(text) - maxlen, step):
     sentences.append(text[i: i + maxlen])
     next_chars.append(text[i + maxlen])
 print('nb sequences:', len(sentences))
+
 
 print('Vectorization...')
 X = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)

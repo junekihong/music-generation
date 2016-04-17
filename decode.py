@@ -23,12 +23,22 @@ f.write("#track 1\n")
 time = 0
 for line in lines:
     for word in line.split():
-        word = word.strip()
-        if "timesig" in word or "keysig" in word or "mode" in word:
-            word = "TW0 V- " + word
-        else:
-            word = word.split("|")
-
+        word = word.strip().split("|")
+        delta = float(word[0])
+        newtime = time + delta
+        word[0] = str(newtime)
+        time = newtime
+        
+        if word[5] == "1":
+            f.write("TW" + word[0] + " V- " + "-timesig_numr:" + word[1] + "\n")
+            f.write("TW" + word[0] + " V- " + "-timesig_denr:" + word[2] + "\n")
+            f.write("TW" + word[0] + " V- " + "-keysigi:" + word[3] + "\n")
+            if word[4] == "0":
+                word[4] = "\'majora\'"
+            elif word[4] == "1":
+                word[4] = "\'minora\'"
+            f.write("TW" + word[0] + " V- " + "-modea:" + word[4] + "\n")
+        elif word[5] == "0":
             # Key
             word[1] = "K" + word[1]
             # Pitch
@@ -37,19 +47,9 @@ for line in lines:
             word[3] = "Q" + word[3]
             # Gate
             word[4] = "L" + word[4]
-            
             word = word[:1] + ["V1"] + word[1:]
             
-            delta = float(word[0])
-            newtime = time + delta
-            word[0] = str(newtime)
-            time = newtime
-            
-            
             word[0] = "TW"+word[0]
-            word = " ".join(word)
-        
-            
-            
-        f.write(word + "\n")
+            word = " ".join(word[:5])
+            f.write(word + "\n")
 f.close()
