@@ -1,9 +1,14 @@
 #!/bin/bash
 
 
+#for file; do
+#    ./midi2gro "$file" gro/
+#    echo
+#done
+
+
 for file; do
-    ./midi2gro "$file" gro/
-    echo
+    bash test_pipeline.sh "$file"
 done
 
 
