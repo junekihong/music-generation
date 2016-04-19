@@ -125,7 +125,7 @@ def reencode(word):
 
 
 
-for iteration in range(0, 60):
+for iteration in range(0, 1000):
     sys.stderr.write("-"*50 + "\n")
     sys.stderr.write("Iteration " + str(iteration) + "\n")
     model.fit(X, y, batch_size=128, nb_epoch=1)
@@ -137,39 +137,37 @@ for iteration in range(0, 60):
     start_index = random.randint(0, len(text) - maxlen - 1)
     
     #for diversity in [0.2, 0.5, 1.0, 1.2]:
-    #for diversity in [1.0, 2.0]:
     for diversity in [1.0]:
         f = open("iter" + str(iteration+1) + "d:" + str(diversity) + ".output.encoded", "w")
         #f = sys.stdout
         
-        #print
         #print "----- diversity:", diversity
-        
         generated = ""
         sentence = text[start_index: start_index + maxlen]
         generated += " ".join([reencode(x) for x in sentence])
         #print "----- Generating with seed: ", sentence
         f.write(generated + " ")
-        
-        for i in range(400):
-            #x = np.zeros((1, maxlen, len(words)))
-            x = np.zeros((1, maxlen, 6))
+
+        if iteration % 20 == 0:
+            for i in range(400):
+                #x = np.zeros((1, maxlen, len(words)))
+                x = np.zeros((1, maxlen, 6))
             
-            for t,word in enumerate(sentence):
-                #print 0, t, word_indices[word]
-                #x[0, t, word_indices[word]] = 1
-                x[0, t] = word
-            #break
+                for t,word in enumerate(sentence):
+                    #print 0, t, word_indices[word]
+                    #x[0, t, word_indices[word]] = 1
+                    x[0, t] = word
+                #break
             
-            preds = model.predict(x, verbose=0)[0]
-            next_index = sample(preds, diversity)
-            next_word = indices_words[next_index]
-            
-            generated += reencode(next_word) + " "
-            #generated += reencode(preds) + " "
-            
-            sentence = sentence[1:] + [next_word]
-            f.write(reencode(next_word) + " ")
-            f.flush()
+                preds = model.predict(x, verbose=0)[0]
+                next_index = sample(preds, diversity)
+                next_word = indices_words[next_index]
+                
+                generated += reencode(next_word) + " "
+                #generated += reencode(preds) + " "
+                
+                sentence = sentence[1:] + [next_word]
+                f.write(reencode(next_word) + " ")
+                f.flush()
 
 model.save_weights("model_weights.h5", overwrite=True)
