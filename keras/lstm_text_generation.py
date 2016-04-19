@@ -1,16 +1,5 @@
-'''Example script to generate text from Nietzsche's writings.
+#!/bin/python
 
-At least 20 epochs are required before the generated text
-starts sounding coherent.
-
-It is recommended to run this script on GPU, as recurrent
-networks are quite computationally intensive.
-
-If you try this script on new data, make sure your corpus
-has at least ~100k characters. ~1M is better.
-'''
-
-from __future__ import print_function
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
@@ -19,54 +8,103 @@ import numpy as np
 import random
 import sys
 
-#path = get_file('nietzsche.txt', origin="https://s3.amazonaws.com/text-datasets/nietzsche.txt")
+
 path = sys.argv[1]
+#path = "/home/juneki/Documents/School/1_ComputerMusicSystems/project/encoded/DaftPunk_-_AroundTheWorld__Intricacy_20120430141138.gro.encoded"
+#path = "/home/juneki/Documents/School/1_ComputerMusicSystems/project/encoded/4BROSRVG.gro.encoded"
+text = open(path).read().lower()
 
-try: 
-    text = open(path).read().lower()
-except UnicodeDecodeError:
-    import codecs
-    text = codecs.open(path, encoding='utf-8').read().lower()
+sys.stderr.write("corpus length: " +str(len(text)) + "\n")
+#sys.stderr.write("TEXT BEFORE: " + str(text[:80]) +"...\n")
 
-print('corpus length:', len(text))
+text = text.split()
+newtext = []
+for word in text:
+    word = word.split("|")
+    word = tuple([float(word[0]), int(word[1]), int(word[2]), float(word[3]), int(word[4]), int(word[5])])
+    newtext.append(word)
+text = newtext
 
-chars = set(text)
-print('total chars:', len(chars))
-char_indices = dict((c, i) for i, c in enumerate(chars))
-indices_char = dict((i, c) for i, c in enumerate(chars))
+#sys.stderr.write("TEXT AFTER: " + str(text[:3]) + "...\n")
+words = set(text)
+sys.stderr.write("total word tokens: " +str(len(text)) + "\n")
+sys.stderr.write("total word types:  " + str(len(words)) + "\n")
 
 
-# cut the text in semi-redundant sequences of maxlen characters
-maxlen = 20
+maxlen = 10
 step = 3
-sentences = []
-next_chars = []
+sentences,next_words = [],[]
+
+
+#for i in range(0, len(text) - maxlen, step):
+#    sentences.append(text[i: i + maxlen])
+#    next_words.append(text[i + maxlen])
 for i in range(0, len(text) - maxlen, step):
-    sentences.append(text[i: i + maxlen])
-    next_chars.append(text[i + maxlen])
-print('nb sequences:', len(sentences))
+    #sentence = [[x for x in word.split("|")] for word in text[i: i + maxlen]]
+    sentence = []
+    for word in text[i: i+maxlen]:
+        sentence.append(word)
+    
+    next_word = text[i + maxlen]
+    next_words.append(next_word)
+    sentences.append(sentence)
+    
+    
+#sys.stderr.write(str(sentences[:3]) + "...\n")
+sys.stderr.write("nb sequences: " + str(len(sentences)) + "\n")
+sys.stderr.write("Vectorization\n")
+word_indices = dict((w, i) for i,w in enumerate(words))
+indices_words = dict((i, w) for i,w in enumerate(words))
 
+#X = np.zeros((len(sentences), maxlen, len(words)), dtype=np.bool)
+#y = np.zeros((len(sentences), len(words)), dtype=np.bool)
 
-print('Vectorization...')
-X = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
-y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
+X = np.zeros((len(sentences), maxlen, 6))
+#y = np.zeros((len(sentences), 6))
+y = np.zeros((len(sentences), len(words)), dtype=np.bool)
+
+#print "X:", str(len(X))+"x"+str(len(X[0]))+"x"+str(len(X[0][0]))
+#print "y:", str(len(y))+"x"+str(len(y[0]))
+
 for i, sentence in enumerate(sentences):
-    for t, char in enumerate(sentence):
-        X[i, t, char_indices[char]] = 1
-    y[i, char_indices[next_chars[i]]] = 1
+    for t,word in enumerate(sentence):
+        X[i, t] = list(word)
+    #y[i] = list(next_words[i])
+    
+    #print next_words[i]
+    y[i, word_indices[next_words[i]]] = 1
+    
+sys.stderr.write("\n")
+sys.stderr.write("X: " + str(len(X))+"x"+str(len(X[0]))+"x"+str(len(X[0][0])) + "\n")
+sys.stderr.write("y:" + str(len(y))+"x"+str(len(y[0])) + "\n")
+#print X[0]
+#print y[0]
+
+# for i, sentence in enumerate(sentences):
+#     for t,word in enumerate(sentence):
+#         X[i, t, word_indices[word]] = 1
+#     y[i, word_indices[next_words[i]]] = 1
 
 
-# build the model: 2 stacked LSTM
-print('Build model...')
+
+sys.stderr.write("Build Model ...")
+
 model = Sequential()
-model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(chars))))
+#model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(words))))
+model.add(LSTM(512, return_sequences=False, input_shape=(maxlen, 6)))
 model.add(Dropout(0.2))
-model.add(LSTM(512, return_sequences=False))
-model.add(Dropout(0.2))
-model.add(Dense(len(chars)))
-model.add(Activation('softmax'))
 
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+#model.add(LSTM(512, return_sequences=False))
+#model.add(Dropout(0.2))
+
+model.add(Dense(len(words)))
+#model.add(Dense(6))
+model.add(Activation("softmax"))
+#model.add(Activation("relu"))
+
+model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
+#model.compile(loss="mse", optimizer="sgd")
+sys.stderr.write("Done.\n")
 
 
 def sample(a, temperature=1.0):
@@ -75,37 +113,57 @@ def sample(a, temperature=1.0):
     a = np.exp(a) / np.sum(np.exp(a))
     return np.argmax(np.random.multinomial(1, a, 1))
 
-# train the model, output generated text after each iteration
-for iteration in range(1, 60):
-    print()
-    print('-' * 50)
-    print('Iteration', iteration)
+def reencode(word):
+    word = "|".join([str(x) for x in word])
+    return word
+
+
+
+for iteration in range(0, 60):
+    sys.stderr.write("-"*50 + "\n")
+    sys.stderr.write("Iteration " + str(iteration) + "\n")
     model.fit(X, y, batch_size=128, nb_epoch=1)
-
+    
     start_index = random.randint(0, len(text) - maxlen - 1)
-
-    for diversity in [0.2, 0.5, 1.0, 1.2]:
-        print()
-        print('----- diversity:', diversity)
-
-        generated = ''
+    
+    #for diversity in [0.2, 0.5, 1.0, 1.2]:
+    #for diversity in [1.0, 2.0]:
+    for diversity in [1.0]:
+        f = open("iter" + str(iteration) + "d:" + str(diversity) + ".output.encoded", "w")
+        #f = sys.stdout
+        
+        #print
+        #print "----- diversity:", diversity
+        
+        generated = ""
         sentence = text[start_index: start_index + maxlen]
-        generated += sentence
-        print('----- Generating with seed: "' + sentence + '"')
-        sys.stdout.write(generated)
-
+        generated += " ".join([reencode(x) for x in sentence])
+        #print "----- Generating with seed: ", sentence
+        f.write(generated + " ")
+        
         for i in range(400):
-            x = np.zeros((1, maxlen, len(chars)))
-            for t, char in enumerate(sentence):
-                x[0, t, char_indices[char]] = 1.
-
+            #x = np.zeros((1, maxlen, len(words)))
+            x = np.zeros((1, maxlen, 6))
+            
+            
+            for t,word in enumerate(sentence):
+                #print t,word
+                
+                #print 0, t, word_indices[word]
+                #x[0, t, word_indices[word]] = 1
+                x[0, t] = word
+                
+            #break
+            
             preds = model.predict(x, verbose=0)[0]
             next_index = sample(preds, diversity)
-            next_char = indices_char[next_index]
+            next_word = indices_words[next_index]
+            
+            generated += reencode(next_word) + " "
+            #generated += reencode(preds) + " "
+            
+            sentence = sentence[1:] + [next_word]
+            f.write(reencode(next_word) + " ")
+            f.flush()
 
-            generated += next_char
-            sentence = sentence[1:] + next_char
 
-            sys.stdout.write(next_char)
-            sys.stdout.flush()
-        print()
