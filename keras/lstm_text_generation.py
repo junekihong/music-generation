@@ -4,6 +4,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 from keras.utils.data_utils import get_file
+
 import numpy as np
 import random
 import sys
@@ -105,6 +106,10 @@ model.add(Activation("softmax"))
 
 model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
 #model.compile(loss="mse", optimizer="sgd")
+
+f = open("model_arch.json","w")
+f.write(model.to_json())
+f.close()
 sys.stderr.write("Done.\n")
 
 
