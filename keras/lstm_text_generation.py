@@ -13,6 +13,9 @@ import sys
 path = sys.argv[1]
 #path = "/home/juneki/Documents/School/1_ComputerMusicSystems/project/encoded/DaftPunk_-_AroundTheWorld__Intricacy_20120430141138.gro.encoded"
 #path = "/home/juneki/Documents/School/1_ComputerMusicSystems/project/encoded/4BROSRVG.gro.encoded"
+filename = path.split("/")[-1].split(".")[0]
+print "Filename:", filename
+
 text = open(path).read().lower()
 
 sys.stderr.write("corpus length: " +str(len(text)) + "\n")
@@ -138,7 +141,7 @@ for iteration in range(0, 1000):
     
     #for diversity in [0.2, 0.5, 1.0, 1.2]:
     for diversity in [1.0]:
-        f = open("iter" + str(iteration+1) + "d:" + str(diversity) + ".output.encoded", "w")
+        f = open(filename+"_iter" + str(iteration+1) + "d:" + str(diversity) + ".output.encoded", "w")
         #f = sys.stdout
         
         #print "----- diversity:", diversity
