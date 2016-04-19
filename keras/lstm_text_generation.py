@@ -110,7 +110,7 @@ model.add(Activation("softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
 #model.compile(loss="mse", optimizer="sgd")
 
-f = open("model_arch.json","w")
+f = open(filename+"_model_arch.json","w")
 f.write(model.to_json())
 f.close()
 sys.stderr.write("Done.\n")
@@ -134,7 +134,7 @@ for iteration in range(0, 1000):
     model.fit(X, y, batch_size=128, nb_epoch=1)
 
     if iteration % 10 == 0:
-        model.save_weights("model_weights.h5", overwrite=True)
+        model.save_weights(filename+"_model_weights.h5", overwrite=True)
     
     
     start_index = random.randint(0, len(text) - maxlen - 1)
@@ -173,4 +173,4 @@ for iteration in range(0, 1000):
                 f.write(reencode(next_word) + " ")
                 f.flush()
 
-model.save_weights("model_weights.h5", overwrite=True)
+model.save_weights(filename+"_model_weights.h5", overwrite=True)
