@@ -31,8 +31,9 @@ sys.stderr.write("total word tokens: " +str(len(text)) + "\n")
 sys.stderr.write("total word types:  " + str(len(words)) + "\n")
 
 
-maxlen = 10
-step = 3
+maxlen = 100
+step = 100
+
 sentences,next_words = [],[]
 
 
@@ -123,13 +124,17 @@ for iteration in range(0, 60):
     sys.stderr.write("-"*50 + "\n")
     sys.stderr.write("Iteration " + str(iteration) + "\n")
     model.fit(X, y, batch_size=128, nb_epoch=1)
+
+    if iteration % 10 == 0:
+        model.save_weights("model_weights.h5", overwrite=True)
+    
     
     start_index = random.randint(0, len(text) - maxlen - 1)
     
     #for diversity in [0.2, 0.5, 1.0, 1.2]:
     #for diversity in [1.0, 2.0]:
     for diversity in [1.0]:
-        f = open("iter" + str(iteration) + "d:" + str(diversity) + ".output.encoded", "w")
+        f = open("iter" + str(iteration+1) + "d:" + str(diversity) + ".output.encoded", "w")
         #f = sys.stdout
         
         #print
@@ -145,14 +150,10 @@ for iteration in range(0, 60):
             #x = np.zeros((1, maxlen, len(words)))
             x = np.zeros((1, maxlen, 6))
             
-            
             for t,word in enumerate(sentence):
-                #print t,word
-                
                 #print 0, t, word_indices[word]
                 #x[0, t, word_indices[word]] = 1
                 x[0, t] = word
-                
             #break
             
             preds = model.predict(x, verbose=0)[0]
@@ -166,4 +167,4 @@ for iteration in range(0, 60):
             f.write(reencode(next_word) + " ")
             f.flush()
 
-
+model.save_weights("model_weights.h5", overwrite=True)
