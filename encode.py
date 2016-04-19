@@ -25,7 +25,10 @@ for line in f:
     if "-texts:" in line or "-names" in line or "-copyrights:" in line or "-markers" in line:
         other.append(line)
         continue
-
+    if "-instruments:" in line:
+        other.append(line)
+        continue
+    
     if "V" in line:
         index = line.split()[1]
         channels[index] = channels.get(index, [])
@@ -146,4 +149,5 @@ for line in sorted([item for sublist in channels.values() for item in sublist], 
 
 #for line in lines:
 #    f.write(line + "\n")
+f.write("\n")
 f.close()
