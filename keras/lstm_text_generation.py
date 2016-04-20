@@ -96,7 +96,7 @@ sys.stderr.write("Build Model ...")
 
 model = Sequential()
 #model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(words))))
-model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, 6)))
+model.add(LSTM(512, return_sequences=False, input_shape=(maxlen, 6)))
 model.add(Dropout(0.2))
 
 #model.add(Dense(256, input_shape=(maxlen, 6)))
@@ -131,7 +131,7 @@ def reencode(word):
 
 
 
-for iteration in range(0, 1000):
+for iteration in range(0, 100):
     sys.stderr.write("-"*50 + "\n")
     sys.stderr.write("Iteration " + str(iteration) + "\n")
     model.fit(X, y, batch_size=128, nb_epoch=1)
