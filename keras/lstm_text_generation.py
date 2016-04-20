@@ -96,8 +96,11 @@ sys.stderr.write("Build Model ...")
 
 model = Sequential()
 #model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(words))))
-model.add(LSTM(512, return_sequences=False, input_shape=(maxlen, 6)))
+model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, 6)))
 model.add(Dropout(0.2))
+
+#model.add(Dense(256, input_shape=(maxlen, 6)))
+#model.add(LSTM(512))
 
 #model.add(LSTM(512, return_sequences=False))
 #model.add(Dropout(0.2))
