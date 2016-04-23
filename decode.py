@@ -28,6 +28,9 @@ for line in lines:
         newtime = time + delta
         word[0] = str(newtime)
         time = newtime
+
+        if len(word) < 6:
+            continue
         
         if word[5] == "1":
             f.write("TW" + word[0] + " V- " + "-timesig_numr:" + word[1] + "\n")

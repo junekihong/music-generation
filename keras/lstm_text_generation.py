@@ -1,13 +1,13 @@
 #!/bin/python
 
-from keras.models import Sequential
+from keras.models import Sequential, model_from_json
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 from keras.utils.data_utils import get_file
 
 import numpy as np
 import random
-import sys
+import sys, os
 
 def sample(a, temperature=1.0):
     # helper function to sample an index from a probability array
@@ -97,43 +97,52 @@ if __name__ == "__main__":
     #     y[i, word_indices[next_words[i]]] = 1
     
     
+    model_arch_file = filename + "_model_arch.json"
+    model_weights_file = filename + "_model_weights.h5"
+    if os.path.exists(model_arch_file):
+        sys.stderr.write("Load Model ...")
+        model = model_from_json(open(model_arch_file, "r").read())
+        sys.stderr.write("Done.\n")
+    else:
+        sys.stderr.write("Build Model ...")
+        model = Sequential()
+        #model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(words))))
+        model.add(LSTM(512, return_sequences=False, input_shape=(maxlen, 6)))
+        model.add(Dropout(0.2))
+        
+        #model.add(Dense(256, input_shape=(maxlen, 6)))
+        #model.add(LSTM(512))
+        
+        #model.add(LSTM(512, return_sequences=False))
+        #model.add(Dropout(0.2))
+        
+        model.add(Dense(len(words)))
+        #model.add(Dense(6))
+        model.add(Activation("softmax"))
+        #model.add(Activation("relu"))
+        
+        model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
+        #model.compile(loss="mse", optimizer="sgd")
     
-    sys.stderr.write("Build Model ...")
+        f = open(model_arch_file, "w")
+        f.write(model.to_json())
+        f.close()
+        sys.stderr.write("Done.\n")
+    if os.path.exists(model_weights_file):
+        sys.stderr.write("Loading Weights.\n")
+        model.load_weights(model_weights_file)
     
-    model = Sequential()
-    #model.add(LSTM(512, return_sequences=True, input_shape=(maxlen, len(words))))
-    model.add(LSTM(512, return_sequences=False, input_shape=(maxlen, 6)))
-    model.add(Dropout(0.2))
-
-    #model.add(Dense(256, input_shape=(maxlen, 6)))
-    #model.add(LSTM(512))
-    
-    #model.add(LSTM(512, return_sequences=False))
-    #model.add(Dropout(0.2))
-    
-    model.add(Dense(len(words)))
-    #model.add(Dense(6))
-    model.add(Activation("softmax"))
-    #model.add(Activation("relu"))
-    
-    model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
-    #model.compile(loss="mse", optimizer="sgd")
-    
-    f = open(filename+"_model_arch.json","w")
-    f.write(model.to_json())
-    f.close()
-    sys.stderr.write("Done.\n")
-    
-    
-    MAX_ITER = 100
+    MAX_ITER = 50
     for iteration in range(0, MAX_ITER):
         sys.stderr.write("-"*50 + "\n")
         sys.stderr.write("Iteration " + str(iteration) + "\n")
         model.fit(X, y, batch_size=128, nb_epoch=1)
         
         if iteration % 10 == 0:
-            model.save_weights(filename+"_model_weights.h5", overwrite=True)
-    
+            model.save_weights(model_weights_file, overwrite=True)
+
+
+        """
         #for diversity in [0.2, 0.5, 1.0, 1.2]:
         #for diversity in [1.0]:
         if iteration % 5 == 0 or iteration == MAX_ITER-1:
@@ -165,9 +174,9 @@ if __name__ == "__main__":
                 
                 generated += reencode(next_word) + " "
                 #generated += reencode(preds) + " "
-                
                 sentence = sentence[1:] + [next_word]
                 f.write(reencode(next_word) + " ")
                 f.flush()
-
-    model.save_weights(filename+"_model_weights.h5", overwrite=True)
+        """
+        
+    model.save_weights(model_weights_file, overwrite=True)

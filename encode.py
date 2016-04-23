@@ -28,6 +28,14 @@ for line in f:
     if "-instruments:" in line:
         other.append(line)
         continue
+
+    if "-cues:" in line:
+        other.append(line)
+        continue
+
+    if "-miscs:" in line:
+        other.append(line)
+        continue
     
     if "V" in line:
         index = line.split()[1]
