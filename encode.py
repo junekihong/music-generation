@@ -36,6 +36,10 @@ for line in f:
     if "-miscs:" in line:
         other.append(line)
         continue
+
+    if "-lyrics:" in line:
+        other.append(line)
+        continue
     
     if "V" in line:
         index = line.split()[1]
