@@ -1,0 +1,13 @@
+
+
+
+*.pyc
+*.o
+
+
+midi/
+mp3/
+encoded/
+decoded/
+gro/
+output/
