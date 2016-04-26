@@ -7,11 +7,11 @@ Computer Music Generation
 
 * run the script
 
-** ./compile_allegro.sh
+  * ./compile_allegro.sh
 
-** to compile the allegro codebase (which this project relies on)
+  * to compile the allegro codebase (which this project relies on)
 
-** This should compile the allegro directory and produce two binaries: midi2gro, gro2midi
+  * This should compile the allegro directory and produce two binaries: midi2gro, gro2midi
 
 ## Prepare Training Data
 
