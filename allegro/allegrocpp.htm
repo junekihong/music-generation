@@ -1,0 +1,276 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (Windows NT 5.0; U) [Netscape]">
+   <title>Allegro C++ SDK</title>
+</head>
+<body>
+
+<h1>
+Allegro C++ SDK</h1>
+<b>Roger B. Dannenberg</b>
+<br>Carnegie Mellon University
+<br>2002
+<h2>
+Introduction</h2>
+Allegro is a music representation with implementations in C++ and Serpent.
+The C++ implementation provides the following features:
+<ul>
+<li>
+Data structure for sequences of notes with property lists and update events</li>
+
+<li>
+Conversion between beat-based and time-based representations</li>
+
+<li>
+Ascii representation ("Allegro", .gro files)</li>
+
+<li>
+Allegro file reader</li>
+
+<li>
+Allegro file writer</li>
+
+<li>
+Standard MIDI File reader</li>
+
+<li>
+Standard MIDI File writer</li>
+</ul>
+
+<h2>
+Structure and Overview</h2>
+An Alg_seq contains:
+<br>&nbsp;&nbsp;&nbsp; a sequence of Alg_tracks, each of which contains
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a sequence of Alg_events,
+each of which can be either
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+an Alg_note with an optional list of Alg_parameter, or
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+an Alg_update event with one Alg_parameter, which contains
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+an Alg_attribute, which is a unique string pointer, and
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+a value, either real, string, integer, boolean, or unique string (symbol)
+<p>In addition, and Alg_seq contains an Alg_time_map, which maintains the
+tempo information, and an Alg_time_sigs, which contains time signatures.
+<p>An Alg_attribute is a string. The last character of the string indicates
+the type, e.g. 'r' indicates a real value, as in the attribute "tempor".
+For efficiency, when attributes are stored as an Alg_attribute, the final
+character is prepended to the beginning of the string. Alg_parameter has
+two member functions, attr_type and attr_name, that retrieve the initial
+(type-indicating) character, and the remainder (the actual name) of the
+string. Alg_parameter also contains a union type holding a value of type
+real, integer, string, atom (unique string, e.g. attribute), or logical
+(boolean).
+<h2>
+The Alg_seq Class</h2>
+The main class in Allegro is the Alg_seq, which encapsulates sequences.
+An Allegro sequence contains the following methods and member variables:
+<h3>
+void Alg_seq::convert_to_beats()</h3>
+Change the internal representation of time and duration to beats. If the
+internal representation is already beats, this does nothing.
+<h3>
+void Alg_seq::convert_to_seconds()</h3>
+Change the internal representation of time and duration to seconds. If
+the internal representation is already seconds, this does nothing.
+<h3>
+bool units_are_seconds</h3>
+This member variable tells whether units are in beats or seconds. <i>Do
+not ever set this variable. Use convert_to_beats() and convert_to_seconds()
+instead.</i>
+<h3>
+channel_offset_per_track</h3>
+This member variable determines whether track numbers are used to compute
+channel numbers when MIDI files are read and written. The formula for the
+Allegro channel number is: &lt;track_num> * channel_offset_per_track +
+&lt;midi_channel>. The default is zero, which means MIDI channels are retained.
+100 is recommended so that you can read track numbers easily, e.g. 304
+means track 3, channel 4.
+<h3>
+long Alg_seq::seek_time(double time, int track_num)</h3>
+Determine the index of the first track event after time (in beats or seconds,
+according to units_are_seconds.
+<h3>
+bool Alg_seq::insert_beat(double time, double beat)</h3>
+Insert a beat at a given time. This modifies the tempo track for the sequence.
+It specifies that the given beat should fall at the given time.
+<h3>
+bool Alg_seq::insert_tempo(double tempo, double beat)</h3>
+Insert a tempo change at a given time. This sets the tempo at a specified
+time, modifying the tempo track.
+<h3>
+void Alg_seq::add_event(Alg_event_ptr event, int track_num)</h3>
+Appends an event to the indicated track.
+<h3>
+bool Alg_seq::set_tempo(double tempo, double start_beat, double end_beat)</h3>
+Change the tempo between two beat positions, deleting any existing tempo
+specifications between those two beat positions.
+<h3>
+void Alg_seq::set_time_sig(double beat, double num, double den)</h3>
+Insert a time signature with the specified "numerator" and "denominator"
+at the given beat.
+<h3>
+void Alg_seq::beat_to_measure(double beat, long *measure, double *m_beat,
+double *num, double den)</h3>
+Convert a beat number to measure number, beat number within the measure,
+the numerator and denominator of the time signature.
+<h3>
+void Alg_seq::merge_tracks()</h3>
+Merge all tracks into one. Delete the other tracks.
+<h3>
+void Alg_seq::iteration_begin()</h3>
+To interate through all events in the sequence, run this to start.
+<h3>
+Alg_event_ptr Alg_seq::iteration_next()</h3>
+To get successive events, call this method.
+<h3>
+void Alg_seq::iteration_end()</h3>
+When the iteration is complete, signified by a NULL return from iteration_next(),
+call this method to clean up after the iteration.
+<h3>
+Alg_tracks tracks</h3>
+An expandable array of Alg_track's, indexed by integers.
+<br>&nbsp;
+<h2>
+Accessing Elements of a Sequence (Alg_seq)</h2>
+This implementation is intended to be open, allowing full access to the
+structures, rather than providing a narrow API with restricted (and possibly
+safer) access. Read the code for full details. To access all events in
+a sequence, use the following example:
+<blockquote><tt>for (j = 0; j &lt; seq->tracks.len; j++) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Alg_events &amp;notes = *seq->tracks[j];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; notes.len; i++) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Alg_event_ptr e = notes[i];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* do something with
+e */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; }</tt>
+<br><tt>}</tt></blockquote>
+
+<h2>
+The Alg_event Class</h2>
+You get events by accessing elements of a track (see the code example above).
+An Alg_event is an abstract superclass, so actual events will be either
+Alg_note or Alg_update instances. Events have the following members:
+<h3>
+char type</h3>
+The type is either 'u' for an Alg_update, or 'n' for an Alg_note (these
+are subclasses of Alg_event).
+<h3>
+double time</h3>
+The time is measured in either beats or seconds, depending upon the Alg_seq
+member variable units_are_seconds.
+<h3>
+long chan</h3>
+The channel corresponds to the midi channel, but it can also be -1 to indicate
+an update that applies to the whole sequence or track. Midi File metaevents
+use -1.
+<h2>
+The Alg_note Class</h2>
+Notes have several standard properties (member variables) as well as a
+list of parameters. In general, a note represents some sound event. This
+could be a Midi note or some more abstract sound controlled by a set of
+parameters and updates.
+<h3>
+long key</h3>
+The key is used as a note identifier. Updates with the same key apply to
+this note instance. The key for Midi notes corresponds to the note number
+(key) in Midi, but while Midi is limited to 127 keys and 16 channels, Allegro
+allows any number of keys and channels. It is reasonable to give every
+note a unique ID using the key.
+<h3>
+double pitch</h3>
+Pitch is specified in semitones, e.g. 69.0 implies A440 or 440.0Hz. Fractional
+pitch is allowed.
+<h3>
+double dur</h3>
+Duration is specified in beats or seconds, just like time.
+<h3>
+double loud</h3>
+Loudness corresponds to MIDI velocity, which is not well-defined.
+<h3>
+Alg_parameters_ptr parameters</h3>
+Additional attribute/value parameters can be specified using this list.
+To add an attribute/value pair to an event, use the following sample code.
+In this example, the note has&nbsp; an attribute named "filename" of type
+string, hence the final "s" in "filenames", and the value is "foo.wav".
+<blockquote><tt>Alg_parameters::insert_string(&amp;(note_ptr->parameters),
+"filenames", "foo.wav")</tt></blockquote>
+Other static member functions of Alg_parameters include insert_real, insert_integer,
+insert_logical, and insert_atom. All of these functions first add the attribute
+to a global list of unique strings called symbol_table, then check to see
+if the attribute already exists and if so, overwrite the value. The insert_string
+method copies the string value to the heap because when a note is deleted,
+the destructor frees both the parameter list and any string values stored
+on it.
+<br>&nbsp;
+<h2>
+The Alg_update Class</h2>
+An update denotes a timed change to some note parameter or to some parameter
+shared by all notes on the channel. The fields of the Alg_update class
+are as follows.
+<h3>
+long key</h3>
+The key is used to tell which note to update. If key is -1, the update
+applies to the entire channel.
+<h3>
+Alg_parameter parameter</h3>
+The parameter holds a single attribute/value pair. While notes can contain
+a list of attribute/value pairs (of type Alg_parameters), an update has
+only one pair (of type Alg_parameter, singular).
+<h2>
+The Time Map (Alg_time_map, Alg_beats, and Alg_beat)</h2>
+Every sequence contains a time/tempo map, which tells how to map from beats
+to time and from time to beats. The map is specified as a piecewise-linear
+function, where breakpoints specify (beat,time) pairs. In addition, the
+Alg_time_map contains a last_tempo field which gives the tempo after the
+last breakpoint, allowing extrapolation of the time map.
+<p>For more information about the time map, read the code for beat_to_time()
+and time_to_beat(), and also see the implementation of convert_to_beats()
+and convert_to_seconds().
+<h2>
+Time Signatures (Alg_time_sig and Alg_time_sigs)</h2>
+In addition, every sequence contains a sequence of time signatures. An
+Alg_time_sig specifies the beat at which the time signature occurs, the
+numerator, and the denominator of the time signature. Fractional values
+can be used, although their interpretation is left to the application.
+There is no check to insure that time signature change on measure boundaries.
+<br>&nbsp;
+<h2>
+Reading and Writing Files</h2>
+Functions are provided to read and write sequences as Standard MIDI Files
+and as Allegro files as follows. In all cases it is up to the caller to
+open and close the FILE. The file must be opened in binary mode for MIDI
+files.
+<h3>
+Alg_seq_ptr alg_smf_read(FILE *file)</h3>
+
+<h3>
+void alg_smf_write(Alg_seq_ptr seq, FILE *file)</h3>
+
+<h3>
+Alg_seq_ptr alg_read(FILE *file)</h3>
+
+<h3>
+void alg_write(Alg_seq_ptr seq, FILE *file)</h3>
+
+<h2>
+Playing Sequence Using MIDI</h2>
+There are two functions in seq2mid.cpp to play sequences via midi. Both
+of these functions run until completion and do not allow the sequence to
+be stopped, so they should not be used in serious applications. The code
+should be useful in writing more substantial code that plays sequences
+using MIDI.
+<h3>
+void seq2midi(Alg_seq_ptr seq, PortMidiStream *midi)</h3>
+seq2midi plays a sequence to a midi stream. The user must open and close
+the stream. See PortMidi documentation.
+<h3>
+void seq_play(Alg_seq_ptr seq)</h3>
+This simpler form opens the default MIDI device using PortMidi, plays the
+sequence, and closes the device.
+<br>&nbsp;
+</body>
+</html>

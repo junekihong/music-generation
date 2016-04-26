@@ -1,0 +1,95 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Roger Dannenberg">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (Windows NT 5.0; U) [Netscape]">
+   <title>Editor API for Allegro</title>
+</head>
+<body>
+
+<h1>
+Editor API for Allegro</h1>
+
+<h2>
+Introduction</h2>
+This document is a design for an API intended to simplify the use of Allegro
+data structures in Audacity.
+<h2>
+What We Want</h2>
+(This is perhaps the hardest part. I expect much of this will be wrong
+and incomplete. -RBD)
+<p><b>Load-from-file&nbsp;&nbsp;&nbsp; </b>Much of this is done. Allegro
+can read from ascii (Allegro) and binary (MIDI) files.
+<p><b>Save-to-file&nbsp;&nbsp;&nbsp; </b>Much of this is done. Allegro
+can write to ascii (Allegro) and binary (MIDI) files. Since Allegro files
+are a superset of MIDI, they should be used by Audacity. It is simple to
+pass Allegro a file handle so that output can begin at any point, and more
+data can be written after the end of the file. We need to add an "end of
+Allegro data" marker; probably "#end".
+<p><b>Archive-to-memory-buffer&nbsp;&nbsp;&nbsp; </b>In addition to writing
+to a file handle, I believe we want to archive to a memory buffer for use
+in Undo and Redo operations. Probably, this can be more time-to-write and
+space efficient than the ascii file version by using binary representations.
+<p><b>Enter-note</b>&nbsp;&nbsp;&nbsp; It should be easy and safe to create
+and enter a note.<b></b>
+<p><b>Select-note(s)</b>&nbsp;&nbsp;&nbsp; There should be functions to
+support selecting individual notes, ranges of notes, and testing whether
+notes are selected.
+<p><b>Undo/Redo</b>&nbsp;&nbsp;&nbsp; I'm worried about archiving an entire
+score on every operation for Undo and Redo. Wouldn't it be better to save
+the command and its "inverse" operation for every edit. E.g. when the user
+selects a note, you just save a reference to the note that changed, and
+when a user inserts a note you insert a reference to the note and its data
+to allow Undo and Redo.
+<p><b>Pointing support</b>&nbsp;&nbsp;&nbsp; Assuming a piano-roll style
+display, implement the functions to map from pointer coordinates to a note
+reference. A note reference might be track number/note index combination
+stored in a structure rather than a pointer.
+<p><b>Data access routines&nbsp;&nbsp;&nbsp; </b>Routines to get the type
+and data from an event, referenced by track number and index.
+<p><b>Display support&nbsp;&nbsp;&nbsp; </b>Need to be able to enumerate
+notes that occupy a time interval. This is complicated by the fact that
+notes are sorted by starting time, but not by ending time. My suggestion
+is to do exhaustive search. At 500ns per note, we can search 20,000 events
+in 10ms. 20,000 events is a large score. I'm just guessing at numbers,
+but this seems reasonable. We can still provide an iterator that finds
+the notes efficiently and calls a display routine.
+<h2>
+Implementation</h2>
+I think there should be a subclass of Allegro objects that makes all the
+Alg_ functions visible but provides a different set of "safe" methods to
+be called by Audacity <i>in most cases</i>. There will always be times
+where you want lower-level direct access. I'd suggest we use Allegro as
+the class name, so for example we'll have
+<pre>&nbsp;&nbsp;&nbsp; long Allegro::add_note(track, time, duration, channel, key, pitch, loudness)</pre>
+(In Allegro, the MIDI key number and the pitch (a floating point number)
+are independent, although for MIDI use they will be the same.)
+<h2>
+Issues and Questions</h2>
+Maybe we should pick between archiving to memory buffers and Undo/Redo
+commands. Do we need both?
+<p>Do we want an Event_reference structure that contains a track number
+and note index? Maybe it's simpler to put all notes in some total order
+and just have an integer index? Maybe we want pointers? Note that an index
+will become invalid after a note insert.
+<p>What other operations do we need?
+<p>How should we deal with tempo tracks, beats, etc.? Allegro is pretty
+powerful in this regard, but I'm not sure how the editor wants to deal
+with this. Can we switch to a beat-based horizontal scale? This would require
+the audio display routines to have a varying number of samples per pixel,
+depending upon local tempo. I suppose we could also label the horizontal
+axis in beats but retain a linear time scale.
+<h2>
+Methods</h2>
+Here, I would define all the new methods of class Allegro, but I'll wait
+to get some input from Dominic before trying to make this proposal more
+definite.
+<br>&nbsp;
+<br>&nbsp;
+<pre></pre>
+
+<pre></pre>
+
+</body>
+</html>
