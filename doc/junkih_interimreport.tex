@@ -1,0 +1,73 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+
+\title{15-623 Project Interim Report}
+\author{Juneki Hong \\
+  junkih@cs.cmu.edu\\
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Group}
+\begin{itemize}
+\item Juneki Hong
+\end{itemize}
+
+\section{Project Proposal}
+
+To model and generate music using deep learning.
+I will design and train a neural model that will read in a set of midi files and then try to decode and generate something that hopefully sounds similar.
+
+I will just be playing whatever comes out of the resulting algorithm.
+
+To give a ``performance'' spin on this project, I could write a small OSC interface so that I could control pitch and volume. Perhaps I could even play several tracks at once and ``mix'' them like a DJ. But I've never done anything like that before.
+Maybe it would just be safer to walk up and only play the prepared midi files.
+
+I plan on reading in and training different models taking data from different artists and genres. I found and downloaded midi data from a number of classical composers (such as Chopin, Tchaikovsky, Beethoven, etc) as well as more contemporary selections (Daft Punk, Rammstein, Avril Lavigne).
+Perhaps training on each set will generate something different. Who knows what would happen if we tried training on it all at once.
+
+
+
+\section{Differences from projects 3 and 4}
+
+The generative algorithm that I wrote for those projects will be a little simplistic in comparison. For starters, in projects 3 and 4 I hand coded the distribution of notes (mostly uniform), and didn't rely on training from data in any way.
+
+I probably won't be using serpent for this project, unless I wanted to add OSC controls in some way. Then I could make serpent play an already prepared midi file that I had generated, and then alter its output via TouchOSC.
+
+I'll be using Allegro as an intermediate music representation, converting midi data into Allegro format, training based on this format, and then decoding the resulting Allegro back into midi format.
+
+For Deep Learning libraries, I think I will try Keras for starters, but I will also consider Theano as an alternative if Keras doesn't support something that I want to do for some reason.
+
+\section{Artifacts Created}
+
+\subsection{Data Sets Created}
+As mentioned above, I have a large assorted collection of midi files that I happened to find and download from the web. I plan on sifting through it and selecting a subset of artists/genres that I think would be interesting to process.
+
+Depending on how fast or slow the training algorithms will take, I will expand or decrease these data sets, trading off speed and performance results.
+
+\subsection{Intermediate/Processed Files}
+Even though Allegro is already a high level representation file format, I will process it down further to make it easier to be read in by a sequence-to-sequence model.
+
+\subsubsection{Cleaning Allegro Files}
+I've already written programs that will strip out all of the comment and text messages within Allegro files (these indicate things like title, author, lyrics, copyright information, and the names of musical sections).
+
+I then attempt to take all of the note-playing information in channels 1-15 and cram it all into channel 1. What this currently does is confuse the midi synthesizer, turning it all into piano music. I want to try and preserve the different instruments played, but have it still all crammed on a single channel. To do this, I might pair every note played with an instrument-change instruction. This might be expensive to do, but I want to try and see if that would work. In the end, I would like all of the music information to be in a single channel.
+
+\subsubsection{Converting Time Stamps}
+Allegro files have time stamps for every event (e.g. ``TW1 ...'', ``TW3 ...'', ...). Once all events have been sucessfully put into a single channel, I will convert these time stamps from absolute values into deltas (e.g. ``TW+1 ...'', ``TW+2 ...''). This would simplify what the sequence-to-sequence model would have to learn (instead of predicting a note should be played at time 10, it should just predict that a note should be played +2 seconds from now).
+
+\subsubsection{Tempo Changes}
+I've also noticed that the Allegro files put all of the tempo information throughout the song in channel 0. One simpler approach could be to separate this out and then train a second model just to only predict tempo changes. Then at the end, take the outputs of these two models and put them together. A more complex approach would be to try and jointly predict a tempo change as well as a note.
+
+
+\subsection{Modeling Music as Language}
+I will need to process the midi and allegro files down to try and ``clean'' up the data as much as possible for the subsequent training steps.
+As a last preprocessing step, I will start to treat music events as part of a language in a text file, where the ``notes'' in a ``song'' should be treated as ``words'' in a ``sentence''. This could be as simple as taking each line and concatenating it together into a single string. Once in a format like this, we could feed it through an RNN or LSTM language model.
+
+To decode, we would need to present our trained model with a starting point (such as a random string) to get back out an output. I will need to write programs that converts back from all of the changes listed above back into an Allegro file (which is then converted to a midi file). Hopefully, this will give us a song to listen to.
+
+Will the result be good or bad? I'm not sure. I will try and select the music that sounds the least worst to present at the concert on April 24th.
+
+\end{document}
