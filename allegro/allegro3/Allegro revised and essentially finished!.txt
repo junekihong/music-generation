@@ -1,0 +1,43 @@
+From: David Murray [dim@andrew.cmu.edu]
+Sent: Tuesday, August 12, 2003 10:12 PM
+To: rbd@cs.cmu.edu
+Subject: Allegro, revised and essentially finished!
+
+Follow Up Flag: Follow up
+Flag Status: Flagged
+
+Hi Professor D!
+
+I've been working on Allegro for the last few weeks since I've been back 
+from Italy, revamping already completed code, putting in your corrections, 
+and cleaning up a great deal of it.  I have two functions left which I'm 
+not sure about approaching, namely Alg_track::serialize and 
+Alg_track::unserialize; I could use your help on those.  With exception to 
+these two, though, the rest is completed and clean.
+
+Here are a few notes for review:
+- Because of a number of changes in allegro.h/.cpp, some of the other files 
+in the Allegro project like allegrosmfrd.cpp needed a few modicications for 
+everything to compile.    Let me know if you want me to send those other 
+files with those modifications; they're all minimal, from changing "len" to 
+"length()" to simple pointer issues.  It might be a pain to go through all 
+of them.
+- To resolve the Alg_events vs. Alg_event_list issue, I decided to have 
+Alg_event_list inherit Alg_events.  I've gone over the 
+accessibility/security issues related, and I strongly believe it is the 
+best solution.  It's also made the code a great deal more readable and 
+intuitive (no more event_list->events->events[i]'s).
+- Alg_midifile_reader uses Alg_events::append(), which you wanted to be 
+protected.  Both append() and insert() are currently public.
+- I took the conditional you wrote for the overlap() auxiliary function 
+(for the track::cut/copy functions) and reduced/simplified it.  Let me know 
+what you think.
+
+
+I'll be here in Albuquerque with plenty of time to spare until the 22nd 
+when I come back to Pittsburgh.  I'm not sure what the best approach would 
+be to debug the code efficiently, but if you'd like me to work on that, let 
+me know and I'll give it my best.
+
+Ciao,
+David

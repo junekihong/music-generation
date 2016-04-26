@@ -1,0 +1,302 @@
+Here's an update on the proposed header file, with more documentation added.
+All Allegro classes are currently prefixed with Alg_. There are quite a few
+classes already. I think we can just extend the existing classes rather than
+try to encapsulate them or subclass them. 
+
+What I propose is one new class called Alg_event_list, which is just an 
+array of pointers to events. The Alg_event_list does not maintain a tempo
+track, an atom list, iterator state, or other information associated with
+a full Alg_seq (nee AllegroSequence). This has two advantages -- it lessons
+the amount of copied data, and it makes it clear when you've just got a set
+of references as opposed to "owning" the data.
+
+Here's an idea: keep a sequence number on each Alg_seq that is incremented
+anytime there is a structural change. Copy the sequence number to any
+Alg_event_list object when it is created. Whenever you access an 
+Alg_event_list, using operator[], assert that the Alg_event_list sequence
+number matches the Alg_seq sequence number. This will guarantee that you
+do not try to retain pointers to events beyond the point where the events
+may no longer exist.
+
+Tracks. It seems to me that a track is analogous to an Audacity audio channel
+and each traqck would therefore normally be displayed in a separate, parallel
+view just like audio channels. I'm going to assume we want to keep tracks
+separate -- this probably creates a bit more work for Audacity, but doesn't
+it make the MIDI editing look more like Audio editing? If we do not treat
+tracks separately as suggested here, then probably the Alg_event_list 
+structure should be two-dimensional: a list of tracks, each containing a list
+of notes.
+
+Selection. Updates are not attribute/value lists; they only take a single
+attribute and value. Therefore, you can't add a "selected=true" parameter.
+I think the simplest thing is to add a byte to every event. This will
+probably have zero overhead (due to word alignment, I think there's already
+unused bytes in the structure), and it will be fast and simple. We can 
+probably add multiple flags if there's a need for them.
+
+See below for details.
+
+	-Roger
+
+
+class Alg_event {
+  public:
+    // Note: there is no Alg_event() because Alg_event is an abstract class.
+    bool is_note();    // tell whether an Alg_event is a note
+	bool is_update();  // tell whetehr an Alg_event is a parameter update
+	char get_type();   // return 'n' for note, 'u' for update
+	bool get_selected();	
+	void set_selected(bool);     
+	// Note: notes are identified by a (channel, identifier) pair. 
+	// For midi, the identifier is the key number (pitch). The identifier
+	// does not have to represent pitch; it's main purpose is to identify
+	// notes so that they can be named by subsequent update events.
+    int get_identifier(); // get MIDI key or note identifier of note or update
+	void set_identifier(long); // set the identifier
+	// In all of these set_ methods, strings are owned by the caller and
+	// copied as necessary by the callee. For notes, an attribute/value
+	// pair is added to the parameters list. For updates, the single
+	// attribute/value parameter pair is overwritten. In all cases, the
+	// attribute (first argument) must agree in type with the second arg.
+	// The last letter of the attribute implies the type (see below).
+	void set_string_value(char *attr, char *value);
+	void set_real_value(char *, double);
+	void set_logical_value(char *, bool);
+	void set_integer_value(char *, long);
+	void set_atom_value(char *attr, char *atom);
+
+	// Some note methods. These fail (via assert()) if this is not a note:
+	//
+    double get_pitch();// get pitch in steps -- use this even for MIDI
+	// times are in seconds or beats, depending upon the units_are_seconds 
+	// flag in the containing sequence
+    double get_start_time(); // get start time in seconds or beats
+    double get_end_time();   // get end time in seconds or beats
+    double get_duration();   // get duration in seconds or beats
+	void set_pitch(double);
+	void set_start_time(double); // in beats or seconds -- se get_start_time
+	void set_duration(double);
+
+	// Notes have lists of attribute values. Attributes are converted
+	// to/from strings in this API to avoid explicit use of Alg_attribute
+	// types. Attribute names end with a type designation: 's', 'r', 'l',
+	// 'i', or 'a'.
+	//
+    bool has_attribute(char *); // test if note has attribute/value pair
+    char get_attribute_type(char *); // get the associated type: 
+	    // 's' = string, 
+	    // 'r' = real (double), 'l' = logical (bool), 'i' = integer (long),
+		// 'a' = atom (char *), a unique string stored in Alg_seq
+	char *get_string_value(char *);  // get the string value
+	double get_real_value(char *);   // get the real value
+	bool get_logical_value(char *);  // get the logical value
+	long get_integer_value(char *);  // get the integer value
+	char *get_atom_value(char *);    // get the atom value
+	void delete_attribute(char *);   // delete an attribute/value pair
+	    // (ignore if no matching attribute/value pair exists)
+
+    // Some attribute/value methods. These fail if this is not an update.
+	// Attributes are converted to/from strings to avoid explicit use
+	// of Alg_attribute types.
+	// 
+    char *get_attribute();    // get the update's attribute
+	char get_update_type();   // get the update's type: 's' = string, 
+	    // 'r' = real (double), 'l' = logical (bool), 'i' = integer (long),
+		// 'a' = atom (char *), a unique string stored in Alg_seq
+	char *get_string_value(); // get the update's string value
+	    // Notes: Caller does not own the return value. Do not modify.
+		// Do not use after underlying Alg_seq is modified.
+	double get_real_value();  // get the update's real value
+	bool get_logical_value(); // get the update's logical value
+	long get_integer_value(); // get the update's integer value
+	char *get_atom_value();   // get the update's atom value
+	    // Notes: Caller does not own the return value. Do not modify.
+		// The return value's lifetime is forever.
+
+    // I THINK MIDI OUTPUT SHOULD BE HANDLED BY AN EXTERNAL ROUTINE THAT
+	// KNOWS ABOUT PORTMIDI AND ALLEGRO
+    // returns the MIDI bytes for this event in *midiBytes, and the
+    // number of bytes in *len.  Returns true if successful.  Pass the
+    // maximum length of the buffer in *len initially.
+    bool GetMIDIBytes(unsigned char *midiBytes, int *len);
+
+    const char *GetDescription(); // Can point to static buffer;
+                                  // not necc. thread-safe.
+                                  // Just for debugging.
+};
+
+
+class Alg_event_list {
+  public:
+    Alg_event *operator[];
+	~Alg_event_list();
+	int length();
+};
+
+class Alg_seq {
+  public:
+    // NOTE: Alg_event IS ABSTRACT; WE NEED TO SPECIFY EITHER A NOTE
+	//       OR AN UPDATE.
+    // AllegroEvent();
+    // AllegroEvent(AllegroEvent &e); // copy constructor
+    // AllegroEvent(const unsigned char *midiBytes, int len);
+    // AllegroEvent(int midiNote, int channel, double loudness,
+    //              double t, double duration);
+	Alg_seq();
+    Alg_seq(Alg_seq &s); // copy constructor
+    Alg_seq(const char *filename); // create from text (Allegro) file
+    ~Alg_seq();
+
+	// We need to specify what errors can appear here.
+    const char *get_last_error_message();
+
+    //
+    // Saving/loading
+    //
+
+    // Returns a buffer containing a serialization of the
+    // file.  It will be an ASCII representation unless
+    // midi is true.
+    void serialize(char **buffer, int *len, bool midi);
+
+    // Try to read from a memory buffer.  Automatically guess
+    // whether it's MIDI or text.
+    bool unserialize(char *buffer, int len);
+
+    //
+    // Accessing/editing individual events
+    //
+
+	// Returns the number of tracks
+	int tracks();
+
+    // Returns the number of events for given track
+    int length(int track);
+
+	// Returns the duration of the sequence in beats or seconds
+	double duration();
+
+	// Are we using beats or seconds?
+    bool get_units_are_seconds();
+	
+	// Change units 
+	void convert_to_beats();
+	void convert_to_seconds();
+
+    // Accesses a particular track.
+    Alg_events_ptr &operator[](int i);
+	// NOTE: Alg_events_ptr also has an operator[] that returns Alg_event_ptr
+
+	// Methods to create events. The returned event is owned by the caller.
+	// Use delete to get rid of it unless you call add() -- see below.
+	//
+	Alg_event *create_note(double time, int channel, int identifier, 
+	                       double pitch, double loudness, double duration);
+	// Note: after create_update(), caller should use set_*_value() to
+	// initialize the attribute/value pair:
+	Alg_event *create_update(double time, int channel, int identifier);
+	// Note: midi_message is in PortMidi format. The result is a note or
+	// an update. For notes, the duration is set to zero and the loudness
+	// is set to the midi note velocity. The time is set to zero.
+	// IS THIS REALLY WHAT WE WANT? WHY NOT HAVE AN API WHERE YOU SEND IN
+	// TIMESTAMPS AND MIDI MESSAGES AND A TRACK GETS CONSTRUCTED FOR YOU
+	// WITH DURATIONS PROPERLY CALCULATED AND EXTRA NOTE-ONS/NOTE-OFFS
+	// DETECTED AND DELETED OR RESOLVED?
+	Alg_event *create_event_from_midi(long midi_message);
+					      
+
+    // Adds a new event - it is automatically inserted into the
+    // correct order in the sequence based on its timestamp.
+	// The ownership passes from the caller to this Alg_seq. The
+	// event is not copied.
+    void add(int track, Alg_event *event);
+
+    //
+    // Editing regions
+    //
+
+    // Deletes the notes that start within the given region
+    // and returns them in a new sequence.  The start times
+    // of the notes in the returned sequence should be shifted
+    // over by t.  The notes after the region get shifted over
+    // to fill the gap. The tempo track is edited in a similar way
+	// and the cut tempo information is retained in the new seq.
+	// ONLY NOTES THAT START WITHIN THE REGION ARE CUT. CUT NOTES
+	// MAY EXTEND BEYOND THE DURATION OF THE RESULTING SEQ.
+    Alg_seq *cut(double t, double len);
+
+    // Like cut() but doesn't remove the notes from the original
+    // sequence. The Alg_events are copied, not shared. ONLY EVENTS
+	// THAT START WITHIN THE REGION ARE COPIED. COPIED NOTES MAY
+	// EXTEND BEYOND THE DURATION OF THE RESULTING SEQ.
+    Alg_seq *copy(double t, double len);
+
+    // Inserts a sequence in the middle, shifting some notes
+    // over by the duration of the seq, which is first converted
+	// to the same units (seconds or beats) as this. (This makes
+	// a differece because the pasted data may change the tempo,
+	// and notes that overlap the borders will then experience
+	// a tempo change.)
+	// THE SEQ PARAMETER IS NOT MODIFIED, AND Alg_event's ARE
+	// COPIED, NOT SHARED. 
+    void paste(double t, Alg_seq *seq); // Shifts notes
+
+    // Merges two sequences with a certain offset. The offset is
+	// interpreted as either beats or seconds according to the 
+	// current units of this, and seq is converted to the same
+	// units as this. Except for a possible conversion to beats
+	// or seconds, the tempo track of seq is ignored. (There is 
+	// no way to merge tempo tracks.)
+	// THE SEQ PARAMETER IS NOT MODIFIED, AND Alg_event's ARE
+	// COPIED, NOT SHARED.
+    void merge(double t, Alg_seq *seq);
+
+    // Deletes and shifts notes to fill the gap. The tempo track
+	// is also modified accordingly. ONLY EVENTS THAT START WITHIN
+	// THE REGION ARE DELETED. NOTES THAT EXTEND FROM BEFORE THE
+	// REGION INTO THE REGION RETAIN THEIR DURATION IN EITHER
+	// BEATS OR SECONDS ACCORDING TO THE CURRENT UNITS OF this.
+    void clear(double t, double len);
+
+    // Deletes notes but doesn't shift.  If the "all" argument
+    // is true, deletes all notes that intersect the range at all,
+    // not just those that start within it. The tempo track is 
+	// not affected.
+    void silence(double t, double len, bool all);
+
+    // Simply shifts notes past time t over by len, which is given
+	// in either beats or seconds according to the units of this.
+    void insert_silence(double t, double len);
+
+    //
+    // Accessing for screen display
+    //
+
+    // Find all notes and updates in a track that intersect the
+    // given range so they can be displayed on-screen.
+    Alg_event_list *find_events_in_range(int track, double t, double len);
+
+    // A useful generic function to retrieve only certain
+    // types of events.  The masks should be bit-masks defined
+    // somewhere else. Part of the mask allows us to search for 
+	// selected events.
+	// 
+    Alg_event_list *find(int track, double t, double len,
+                          int channelMask, int eventTypeMask);
+
+    //
+    // Accessing for playback
+    //
+
+    // Returns only MIDI events.  Normal Allegro notes are
+    // replaced with note-on and note-off events, basically
+    // ready to send out to the MIDI interface. Since this
+	// operates across all tracks, there is a way to mute
+	// selected tracks (see below). Tracks that are muted
+	// are ignored.
+    Alg_event_list get_midi_events(double t, double len);
+	// get and set the "mute" flag for each track
+	bool get_track_mute(int track);
+	void set_track_mute(int track, bool mute);
+};
+
