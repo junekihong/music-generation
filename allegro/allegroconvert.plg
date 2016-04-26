@@ -1,0 +1,71 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: allegro - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP162.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "..\portmidi\porttime" /I "..\portmidi\pm_common" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /Fp"Release/allegro.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\rbd\allegro\allegro.cpp"
+"D:\rbd\allegro\allegrord.cpp"
+"D:\rbd\allegro\allegrosmfrd.cpp"
+"D:\rbd\allegro\allegrosmfwr.cpp"
+"D:\rbd\allegro\allegrowr.cpp"
+"D:\rbd\allegro\seq2midi.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP162.tmp" 
+Creating temporary file "C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP163.tmp" with contents
+[
+/nologo /out:"Release\allegro.lib" 
+.\Release\allegro.obj
+.\Release\allegrord.obj
+.\Release\allegrosmfrd.obj
+.\Release\allegrosmfwr.obj
+.\Release\allegrowr.obj
+.\Release\mfmidi.obj
+.\Release\seq2midi.obj
+.\Release\strparse.obj
+.\Release\trace.obj
+]
+Creating command line "link.exe -lib @C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP163.tmp"
+<h3>Output Window</h3>
+Compiling...
+allegro.cpp
+allegrord.cpp
+allegrosmfrd.cpp
+allegrosmfwr.cpp
+allegrowr.cpp
+seq2midi.cpp
+Creating library...
+<h3>
+--------------------Configuration: allegroconvert - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP164.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"allegroconvertRelease/allegroconvert.pch" /YX /Fo"allegroconvertRelease/" /Fd"allegroconvertRelease/" /FD /c 
+"D:\rbd\allegro\allegroconvert.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP164.tmp" 
+Creating temporary file "C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP165.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Release\allegro.lib /nologo /subsystem:console /incremental:no /pdb:"allegroconvertRelease/allegroconvert.pdb" /machine:I386 /out:"allegroconvertRelease/allegroconvert.exe" 
+.\allegroconvertRelease\allegroconvert.obj
+.\Release\allegro.lib
+]
+Creating command line "link.exe @C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP165.tmp"
+<h3>Output Window</h3>
+Compiling...
+allegroconvert.cpp
+Linking...
+
+
+
+<h3>Results</h3>
+allegroconvert.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

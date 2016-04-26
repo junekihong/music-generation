@@ -1,0 +1,27 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: allegro - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP28.tmp" with contents
+[
+/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\portmidi\pm_common" /I "..\portmidi\porttime" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /Fp"Debug/allegro.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\rbd\allegro\mfmidi.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\rbd\LOCALS~1\Temp\RSP28.tmp" 
+Creating command line "link.exe -lib /nologo /out:"Debug\allegro.lib"  .\Debug\allegro.obj .\Debug\allegrord.obj .\Debug\allegrosmfrd.obj .\Debug\allegrosmfwr.obj .\Debug\allegrowr.obj .\Debug\mfmidi.obj .\Debug\seq2midi.obj .\Debug\strparse.obj .\Debug\trace.obj "
+<h3>Output Window</h3>
+Compiling...
+mfmidi.cpp
+Creating library...
+
+
+
+<h3>Results</h3>
+allegro.lib - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
