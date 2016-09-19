@@ -132,14 +132,14 @@ if __name__ == "__main__":
         sys.stderr.write("Loading Weights.\n")
         model.load_weights(model_weights_file)
     
-    MAX_ITER = 50
+    MAX_ITER = 100
     for iteration in range(0, MAX_ITER):
         sys.stderr.write("-"*50 + "\n")
         sys.stderr.write("Iteration " + str(iteration) + "\n")
         model.fit(X, y, batch_size=128, nb_epoch=1)
         
-        if iteration % 10 == 0:
-            model.save_weights(model_weights_file, overwrite=True)
+        #if iteration % 10 == 0:
+        model.save_weights(model_weights_file, overwrite=True)
 
 
         """
